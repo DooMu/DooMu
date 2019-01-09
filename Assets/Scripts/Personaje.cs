@@ -3,36 +3,38 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+// Codigo del control del personaje. Incluye control de animaciones, colisiones y sincronizacion online
+
 public class Personaje : Photon.MonoBehaviour {
-	public bool corriendo,atacando,agachado,tocasuelo,subiendo,combo,noqueado,volar,golpe;
-	public bool mine=false;
-	Animator anim;
-	AnimatorOverrideController animatorOver;
-	public string stanimation;
-	public Image BarraVida,BarraFondo,BarraRoja;
-	public Canvas MyCanvas;
-	public float vel = 0f,radio,vely,sizex,lerp;
+	public bool corriendo,atacando,agachado,tocasuelo,subiendo,combo,noqueado,volar,golpe; // Variables para el animator
+	public bool mine=false; // Objeto perteneciente al jugador activo
+	Animator anim; // Animator del personaje
+	AnimatorOverrideController animatorOver; // Controlador para sobreescribir animator
+	public string stanimation; // Nombre animacion
+	public Image BarraVida,BarraFondo,BarraRoja; // Barras vida
+	public Canvas MyCanvas; // Interfaz
+	public float vel = 0f,radio,sizex,lerp; // Velocidad, radio de colision con suelo, Escala horizontal, Lerp para interpolar movimiento
 	Rigidbody2D rig;
-	public SpriteRenderer spi;
-	public LayerMask mascarasuelo;
-	public Transform comprobadorsuelo,ultipoint,inicio;
-	public int teamid;
-	public GameObject ulti,especial,comboeffect;
-	int numeroATK=0;
-	public Flag myFlag,EnemyFlag;
-	GestorPartida Gestor;
-	#region VariablesSalto
-	public float SaltoUp,SaltoDown,FactorSalto,DuracionSalto,SaltoLerp,Salto;
-	int SaltoDisp=0;
-	string MyName;
-	float gravedad;
+	public SpriteRenderer spi; // Cuerpo del personaje
+	public LayerMask mascarasuelo; // Identificador de suelo
+	public Transform comprobadorsuelo,ultipoint,inicio; // Posicion de los pies, Posicion para iniciar ataque especial, Posicion de reinicio
+	public int teamid; // Identificador de equipo
+	public GameObject ulti,especial,comboeffect; // Prefabs de la ulti, ataque especial y combo
+	int numeroATK=0; // Patron del ataque
+	public Flag myFlag,EnemyFlag; // Bandera de equipo y enemiga
+	GestorPartida Gestor; // Administrador de la partida (puntaje,kills y mensajes)
+	#region VariablesSalto 
+	public float SaltoUpfg,SaltoDown,FactorSalto,DuracionSalto,SaltoLerp,Salto; // Velocidad al subir, velocidad al bajar, Velocidad activa, Interpolacion de salto
+	int SaltoDisp=0; // Conteo para doble salto
+	string MyName; // Nombre de jugador
+	float gravedad; // Fuerza con la que cae
 	#endregion
-	public AnimationClip[] animaciones;
+	public AnimationClip[] animaciones; // Conjunto de animaciones para las replicas de jugadores
 	#region Estadisticas
-	public float HPMAX,HP;
+	public float HPMAX,HP; // Vida maxima, Vida actual
 	#endregion
 
-	#region Start Update
+	#region Start Update //Metodos basicos de Unity
 	void Awake(){
 		rig = GetComponent<Rigidbody2D>();
 		anim = GetComponent<Animator>();
@@ -47,7 +49,7 @@ public class Personaje : Photon.MonoBehaviour {
 		Gestor = GameObject.Find ("GestorPartida").GetComponent<GestorPartida> ();
 		if (GetComponent<PhotonView> ().isMine) {
 			mine = true;
-			GetComponent<PhotonVoiceSpeaker> ().enabled = false;
+			GetComponent<PhotonVoiceRecorder> ().enabled = true;
 			Camera.main.GetComponent<CamFollow> ().player = transform;
 			if(Application.isMobilePlatform){
 			GameObject[] Botones = GameObject.FindGameObjectsWithTag ("BotonControl");
@@ -56,10 +58,10 @@ public class Personaje : Photon.MonoBehaviour {
 			}
 			GameObject.Find ("GestorMultiTouch").GetComponent<GestorMultiTouch> ().PersonajeActivo = this;
 			}
-			} else {
+		} else {
 			rig.gravityScale=0f;
-			GetComponent<PhotonVoiceRecorder> ().enabled = false;
-			}
+			GetComponent<PhotonVoiceSpeaker> ().enabled = true;
+		}
 		if(GetComponent<PhotonView> ().ownerId%2==0){
 			teamid = 1;
 			myFlag = GameObject.Find ("Flag2").GetComponent<Flag> ();
@@ -84,7 +86,6 @@ public class Personaje : Photon.MonoBehaviour {
 			MyName="Rojo";
 			spi.color = Color.red;
 		}
-		gravedad = rig.gravityScale;
 		transform.name = MyName;
 	}
 
@@ -92,7 +93,6 @@ public class Personaje : Photon.MonoBehaviour {
 		BarraVida.fillAmount = HP / HPMAX;
 		if (mine) {
 			tocasuelo = Physics2D.OverlapCircle (comprobadorsuelo.position, radio, mascarasuelo);
-			vely = rig.velocity.y;
 				if (rig.velocity.y > 0.1f) {
 					subiendo = true;
 				} else if (rig.velocity.y <= 0f) {
@@ -353,7 +353,7 @@ public class Personaje : Photon.MonoBehaviour {
 	}
 	#endregion
 
-	#region PhotonOnline
+	#region PhotonOnline // Region de metodos Online
 	Vector2 OnlinePos;
 	float sentido;
 	string LastAnimation="";
