@@ -73,7 +73,7 @@ PluginImporter:
       settings:
         CPU: AnyCPU
     WindowsStoreApps:
-      enabled: 1
+      enabled: 0
       settings:
         CPU: AnyCPU
         DontProcess: False
@@ -81,11 +81,6 @@ PluginImporter:
         SDK: AnySDK
         ScriptingBackend: Il2Cpp
     iOS:
-      enabled: 1
-      settings:
-        CompileFlags: 
-        FrameworkDependencies: 
-    tvOS:
       enabled: 1
       settings:
         CompileFlags: 

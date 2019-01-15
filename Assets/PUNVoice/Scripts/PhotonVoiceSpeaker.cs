@@ -34,6 +34,10 @@ public class PhotonVoiceSpeaker : Photon.MonoBehaviour
 #else
         this.player = new AudioStreamPlayer(GetComponent<AudioSource>(), "PUNVoice: PhotonVoiceSpeaker:", PhotonVoiceSettings.Instance.DebugInfo);
 #endif
+    }
+
+    private void Start()
+    {
         PhotonVoiceNetwork.LinkSpeakerToRemoteVoice(this);
     }
 

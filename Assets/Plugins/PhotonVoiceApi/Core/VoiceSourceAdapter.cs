@@ -7,7 +7,9 @@
 // </summary>
 // <author>developer@photonengine.com</author>
 // ----------------------------------------------------------------------------
+
 using System;
+
 namespace ExitGames.Client.Photon.Voice
 {
     // Adapts IBufferReader.Read to LocalVoice.PushData
@@ -33,6 +35,7 @@ namespace ExitGames.Client.Photon.Voice
             // any buffer will work but only of localVoice.SourceFrameSize avoids additional processing
             buffer = new T[((LocalVoiceFramed<T>)localVoice).FrameSize];
         }
+
         public override void Service(LocalVoice localVoice)
         {
             while (this.reader.Read(this.buffer))
@@ -41,10 +44,12 @@ namespace ExitGames.Client.Photon.Voice
             }
         }
     }
+
     // Acquires buffer from pool before each Read, releases buffer after last Read (Acquire/Release overhead)
     public class BufferReaderPushAdapterAsyncPool<T> : BufferReaderPushAdapterBase<T>
     {
         public BufferReaderPushAdapterAsyncPool(LocalVoice localVoice, IDataReader<T> reader) : base(reader) { }
+
         public override void Service(LocalVoice localVoice)
         {
             var v = ((LocalVoiceFramed<T>)localVoice);
@@ -58,6 +63,7 @@ namespace ExitGames.Client.Photon.Voice
             v.PushDataBufferPool.Release(buf, buf.Length);
         }
     }
+
     // Reads data to preallocated buffer, copies it to buffer from pool before pushing (copy overhead)
     public class BufferReaderPushAdapterAsyncPoolCopy<T> : BufferReaderPushAdapterBase<T>
     {
@@ -66,6 +72,7 @@ namespace ExitGames.Client.Photon.Voice
         {
             buffer = new T[((LocalVoiceFramed)localVoice).FrameSize];
         }
+
         public override void Service(LocalVoice localVoice)
         {
             while (this.reader.Read(buffer))
@@ -77,6 +84,7 @@ namespace ExitGames.Client.Photon.Voice
             }
         }
     }
+
     public class BufferReaderPushAdapterAsyncPoolFloatToShort : Voice.BufferReaderPushAdapterBase<float>
     {
         float[] buffer;
@@ -84,6 +92,7 @@ namespace ExitGames.Client.Photon.Voice
         {
             buffer = new float[((Voice.LocalVoiceFramed<short>)localVoice).FrameSize];
         }
+
         public override void Service(Voice.LocalVoice localVoice)
         {
             var v = ((Voice.LocalVoiceFramed<short>)localVoice);

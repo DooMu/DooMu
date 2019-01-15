@@ -115,6 +115,11 @@
             Class to wrap static access to the random.Next() call in a thread safe manner.
             </summary>
         </member>
+        <member name="T:ExitGames.Client.Photon.EncryptorManaged.CryptoBase">
+            <summary>
+            Empty base class for encryptor/decryptor classes for "Datagram Encryption".
+            </summary>
+        </member>
         <member name="F:ExitGames.Client.Photon.EncryptorManaged.CryptoBase.BLOCK_SIZE">
             <summary>
             Defines block size for encryption/decryption algorithm
@@ -128,6 +133,16 @@
         <member name="F:ExitGames.Client.Photon.EncryptorManaged.CryptoBase.HMAC_SIZE">
             <summary>
             Defines HMAC size for packet authentication algorithm
+            </summary>
+        </member>
+        <member name="T:ExitGames.Client.Photon.EncryptorManaged.Encryptor">
+            <summary>
+            Empty implemenation of encryption for "Datagram Encryption".
+            </summary>
+        </member>
+        <member name="T:ExitGames.Client.Photon.EncryptorManaged.Decryptor">
+            <summary>
+            Empty implementation for decryption for UDP protocol with "Datagram Encryption".
             </summary>
         </member>
         <member name="T:ExitGames.Client.Photon.StatusCode">
@@ -182,13 +197,19 @@
             <summary>Disconnection due to a timeout (client did no longer receive ACKs from server).</summary>
         </member>
         <member name="F:ExitGames.Client.Photon.StatusCode.DisconnectByServer">
-            <summary>Disconnect by server due to timeout (received a disconnect command, cause server misses ACKs of client).</summary>
+            <summary>Timeout disconnect by server. The server didn't receive necessary ACKs in time.</summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.StatusCode.DisconnectByServerTimeout">
+            <summary>Timeout disconnect by server. The server didn't receive necessary ACKs in time.</summary>
         </member>
         <member name="F:ExitGames.Client.Photon.StatusCode.DisconnectByServerUserLimit">
             <summary>Disconnect by server due to concurrent user limit reached (received a disconnect command).</summary>
         </member>
         <member name="F:ExitGames.Client.Photon.StatusCode.DisconnectByServerLogic">
-            <summary>Disconnect by server due to server's logic (received a disconnect command).</summary>
+            <summary>Disconnect by server due to server's logic.</summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.StatusCode.DisconnectByServerReasonUnknown">
+            <summary>Disconnect by server due to unspecified reason.</summary>
         </member>
         <member name="F:ExitGames.Client.Photon.StatusCode.EncryptionEstablished">
             <summary>(1048) Value for OnStatusChanged()-call, when the encryption-setup for secure communication finished successfully.</summary>
@@ -247,7 +268,7 @@
         </member>
         <member name="M:ExitGames.Client.Photon.IPhotonPeerListener.OnStatusChanged(ExitGames.Client.Photon.StatusCode)">
              <summary>
-             OnStatusChanged is called to let the game know when asyncronous actions finished or when errors happen.
+             OnStatusChanged is called to let the game know when asynchronous actions finished or when errors happen.
              </summary>
              <remarks>
              Not all of the many StatusCode values will apply to your game. Example: If you don't use encryption,
@@ -578,10 +599,7 @@
             Count of all commands currently queued as outgoing, including all channels and reliable, unreliable.
             </summary>
         </member>
-        <member name="M:ExitGames.Client.Photon.PhotonPeer.MessageBufferPoolGet">
-            <summary>Debug method to access the MessageBufferPool used for pooling command-content.</summary>
-            <returns>The actual List of StreamBuffers used for pooling command-content. Careful!</returns>
-        </member>
+        <!-- Ungültiger XML-Kommentar wurde für den Member "M:ExitGames.Client.Photon.PhotonPeer.MessageBufferPoolTrim(System.Int32)" ignoriert -->
         <member name="F:ExitGames.Client.Photon.PhotonPeer.ChannelCount">
             <summary>
             Gets / sets the number of channels available in UDP connections with Photon.
@@ -612,6 +630,11 @@
         <member name="P:ExitGames.Client.Photon.PhotonPeer.PacketLossByChallenge">
             <summary>
             Count of packages dropped due to wrong challenge for this connection.
+            </summary>
+        </member>
+        <member name="P:ExitGames.Client.Photon.PhotonPeer.SentReliableCommandsCount">
+            <summary>
+            Gets the count of sent but not yet acknowledged commands (for UDP connections).
             </summary>
         </member>
         <member name="P:ExitGames.Client.Photon.PhotonPeer.ResentReliableCommands">
@@ -733,7 +756,7 @@
             Changes of the roundtriptime as variance value. Gives a hint about how much the time is changing.
             </summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "P:ExitGames.Client.Photon.PhotonPeer.TimestampOfLastSocketReceive" -->
+        <!-- Ungültiger XML-Kommentar wurde für den Member "P:ExitGames.Client.Photon.PhotonPeer.TimestampOfLastSocketReceive" ignoriert -->
         <member name="P:ExitGames.Client.Photon.PhotonPeer.ServerAddress">
             <summary>
             The server address which was used in PhotonPeer.Connect() or null (before Connect() was called).
@@ -741,6 +764,9 @@
             <remarks>
             The ServerAddress can only be changed for HTTP connections (to replace one that goes through a Loadbalancer with a direct URL).
             </remarks>
+        </member>
+        <member name="P:ExitGames.Client.Photon.PhotonPeer.ServerIpAddress">
+            <summary>Contains the IP address of the previously resolved ServerAddress (or empty, if address wasn't resolved with the internal methods).</summary>
         </member>
         <member name="P:ExitGames.Client.Photon.PhotonPeer.UsedProtocol">
             <summary>The protocol this peer is currently connected/connecting with (or 0).</summary>
@@ -845,6 +871,12 @@
         </member>
         <member name="F:ExitGames.Client.Photon.PhotonPeer.PayloadEncryptionSecret">
             <summary>PayloadEncryption Secret. Message payloads get encrypted with it individually and on demand.</summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.PhotonPeer.DgramEncryptor">
+            <summary>Datagram Encryptor.</summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.PhotonPeer.DgramDecryptor">
+            <summary>Datagram Decryptor.</summary>
         </member>
         <member name="M:ExitGames.Client.Photon.PhotonPeer.#ctor(ExitGames.Client.Photon.IPhotonPeerListener,ExitGames.Client.Photon.ConnectionProtocol)">
             <summary>
@@ -1358,6 +1390,14 @@
             </summary>
             <returns>If a Dispatch happened or not, which shows if more Dispatches might be needed.</returns>
         </member>
+        <member name="M:ExitGames.Client.Photon.EnetPeer.GetFragmentLength">
+            <summary>Gets the target size for fragments.</summary>
+            <remarks>
+            Caches the result for a specific MTU value.
+            Fragment length is different, when datagram encryption is used (so this caches two values in fact).
+            </remarks>
+            <returns></returns>
+        </member>
         <member name="M:ExitGames.Client.Photon.EnetPeer.SendAcksOnly">
             <summary>
             gathers acks until udp-packet is full and sends it!
@@ -1408,14 +1448,14 @@
             <summary>Any reliable unsequenced number that's been received, which is higher than the current highest in complete sequence (reliableUnsequencedNumbersCompletelyReceived).</summary>
         </member>
         <member name="M:ExitGames.Client.Photon.EnetChannel.QueueIncomingReliableUnsequenced(ExitGames.Client.Photon.NCommand)">
-            <summary>Checks and queues incoming reliable unsequenced commands, if they haven't been received yet.</summary>
+            <summary>Checks and queues incoming reliable unsequenced commands ("send" or "fragment"), if they haven't been received yet.</summary>
             <param name="command">The command to check and queue.</param>
             <returns>True if the command is new and got queued (or could be executed/dispatched).</returns>
         </member>
         <member name="T:ExitGames.Client.Photon.NCommand">
             <summary> Internal class for "commands" - the package in which operations are sent.</summary>
         </member>
-        <!-- Badly formed XML comment ignored for member "P:ExitGames.Client.Photon.NCommand.IsFlaggedUnsequenced" -->
+        <!-- Ungültiger XML-Kommentar wurde für den Member "P:ExitGames.Client.Photon.NCommand.IsFlaggedUnsequenced" ignoriert -->
         <member name="M:ExitGames.Client.Photon.NCommand.#ctor(ExitGames.Client.Photon.EnetPeer,System.Byte,ExitGames.Client.Photon.StreamBuffer,System.Byte)">
             <summary>this variant does only create outgoing commands and increments . incoming ones are created from a DataInputStream</summary>
         </member>
@@ -1558,14 +1598,15 @@
             <returns>To be used in debug situations only, as it returns a string for each value.</returns>
         </member>
         <member name="T:ExitGames.Client.Photon.EventData">
-             <summary>
-             Contains all components of a Photon Event.
-             Event Parameters, like OperationRequests and OperationResults, consist of a Dictionary with byte-typed keys per value.
-             </summary>
+             <summary>A Photon Event consists of a Code value and a Parameter Dictionary. In many cases, an Event also has a Sender (key: (byte)254).</summary>
              <remarks>
-             The indexer of this class provides access to the Parameters Dictionary.
+             An event's code should define what it means and what content (Parameters) it has.
+             To simplify matters, the Sender (key: (byte)254) can be accessed via a property which caches the value.
             
-             The operation RaiseEvent allows you to provide custom event content. Defined in LoadBalancing, this
+             The indexer of this class provides access to the Parameters Dictionary. Most common are the events defined
+             by the Realtime layer for Photon (the default logic for the Photon Cloud).
+            
+             The operation RaiseEvent allows you to provide custom event content. Defined in Realtime, this
              CustomContent will be made the value of key ParameterCode.CustomEventContent.
              </remarks>
         </member>
@@ -1574,6 +1615,23 @@
         </member>
         <member name="F:ExitGames.Client.Photon.EventData.Parameters">
             <summary>The Parameters of an event is a Dictionary&lt;byte, object&gt;.</summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.EventData.SenderKey">
+            <summary>Defined in the "Realtime" layer but made available in EventData for convenience.</summary>
+        </member>
+        <member name="F:ExitGames.Client.Photon.EventData.sender">
+            <summary>Backing field Sender.</summary>
+        </member>
+        <member name="P:ExitGames.Client.Photon.EventData.Sender">
+            <summary>Accessor to the sender's actorNumber (key (byte)254). This fetches and caches Parameters[SenderKey] as int.</summary>
+            <remarks>Defined in the uppper layer ("Realtime") but made available in EventData for convenience. Default to 0, even if the key is not present.</remarks>
+        </member>
+        <member name="F:ExitGames.Client.Photon.EventData.CustomDataKey">
+            <summary>Defined in the "Realtime" layer but made available in EventData for convenience.</summary>
+        </member>
+        <member name="P:ExitGames.Client.Photon.EventData.CustomData">
+            <summary>Accessor to the sent custom event content (key (byte)245).</summary>
+            <remarks>Defined in the uppper layer ("Realtime") but made available in EventData for convenience. Null if the key is not present.</remarks>
         </member>
         <member name="P:ExitGames.Client.Photon.EventData.Item(System.Byte)">
             <summary>
@@ -1914,17 +1972,6 @@
             Writes integers as compressed. Either directly as zigzag-encoded or (when a type is written for this value) it can use an optimized sub-type.
             </summary>
         </member>
-        <member name="T:ExitGames.Client.Photon.PingMono">
-            <summary>Uses C# Socket class from System.Net.Sockets (as Unity usually does).</summary>
-            <remarks>Incompatible with Windows 8 Store/Phone API.</remarks>
-        </member>
-        <member name="M:ExitGames.Client.Photon.PingMono.StartPing(System.String)">
-            <summary>
-            Sends a "Photon Ping" to a server.
-            </summary>
-            <param name="ip">Address in IPv4 or IPv6 format. An address containing a '.' will be interpretet as IPv4.</param>
-            <returns>True if the Photon Ping could be sent.</returns>
-        </member>
         <member name="F:ExitGames.Client.Photon.IPhotonSocket.Protocol">
             <summary>The protocol for this socket, defined in constructor.</summary>
         </member>
@@ -1933,6 +1980,9 @@
         </member>
         <member name="P:ExitGames.Client.Photon.IPhotonSocket.ServerAddress">
             <summary>Contains only the server's hostname (stripped protocol, port and or path). Set in IphotonSocket.Connect().</summary>
+        </member>
+        <member name="P:ExitGames.Client.Photon.IPhotonSocket.ServerIpAddress">
+            <summary>Contains the IP address of the previously resolved ServerAddress (or empty, if GetIpAddress wasn't used).</summary>
         </member>
         <member name="P:ExitGames.Client.Photon.IPhotonSocket.ServerPort">
             <summary>Contains only the server's port address (as string).  Set in IphotonSocket.Connect().</summary>
@@ -1971,7 +2021,7 @@
             <returns>IPAddress for the string address or null, if the address is neither IPv4, IPv6 or some hostname that could be resolved.</returns>
         </member>
         <member name="T:ExitGames.Client.Photon.SocketUdp">
-            <summary> Internal class to encapsulate the network i/o functionality for the realtime libary.</summary>
+            <summary>Internal class to encapsulate the network i/o functionality for the realtime libary.</summary>
         </member>
         <member name="M:ExitGames.Client.Photon.SocketUdp.Send(System.Byte[],System.Int32)">
             <summary>used by PhotonPeer*</summary>
@@ -1979,12 +2029,24 @@
         <member name="M:ExitGames.Client.Photon.SocketUdp.ReceiveLoop">
             <summary>Endless loop, run in Receive Thread.</summary>
         </member>
+        <member name="T:ExitGames.Client.Photon.SocketUdpAsync">
+            <summary>Internal class to encapsulate the network i/o functionality for the realtime libary.</summary>
+        </member>
+        <member name="M:ExitGames.Client.Photon.SocketUdpAsync.Send(System.Byte[],System.Int32)">
+            <summary>used by PhotonPeer*</summary>
+        </member>
         <member name="T:ExitGames.Client.Photon.SocketTcp">
-            <summary>
-            Internal class to encapsulate the network i/o functionality for the realtime libary.
-            </summary>
+            <summary>Internal class to encapsulate the network i/o functionality for the realtime libary.</summary>
         </member>
         <member name="M:ExitGames.Client.Photon.SocketTcp.Send(System.Byte[],System.Int32)">
+            <summary>
+            used by TPeer*
+            </summary>
+        </member>
+        <member name="T:ExitGames.Client.Photon.SocketTcpAsync">
+            <summary>Internal class to encapsulate the network i/o functionality for the realtime libary.</summary>
+        </member>
+        <member name="M:ExitGames.Client.Photon.SocketTcpAsync.Send(System.Byte[],System.Int32)">
             <summary>
             used by TPeer*
             </summary>
@@ -2210,6 +2272,9 @@
             <summary>
             Gets the 1536  bit prime for the well known group 5.
             </summary>
+        </member>
+        <member name="T:Photon.SocketServer.Security.ICryptoProvider">
+            <summary>Interface for Photon's DiffieHellman/Payload Encryption.</summary>
         </member>
         <member name="M:Photon.SocketServer.Security.DiffieHellmanCryptoProvider.#ctor">
             <summary>

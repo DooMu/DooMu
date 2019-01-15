@@ -7,7 +7,9 @@
 // </summary>
 // <author>developer@photonengine.com</author>
 // ----------------------------------------------------------------------------
+
 //#define PHOTON_VOICE_VIDEO_ENABLE
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -16,6 +18,7 @@ using System.Threading;
 #if NETFX_CORE
 using Windows.System.Threading;
 #endif
+
 namespace ExitGames.Client.Photon.Voice
 {
     /// <summary>Describes stream properties.</summary>
@@ -69,6 +72,7 @@ namespace ExitGames.Client.Photon.Voice
         {
             return "c=" + Codec + " f=" + SamplingRate + " ch=" + Channels + " d=" + FrameDurationUs + " s=" + FrameSize + " b=" + Bitrate + " w=" + Width + " h=" + Height + " ud=" + UserData;
         }
+
         internal static VoiceInfo CreateFromEventPayload(Dictionary<byte, object> h)
         {
             var i = new VoiceInfo();
@@ -78,6 +82,7 @@ namespace ExitGames.Client.Photon.Voice
             i.Bitrate = (int)h[(byte)EventParam.Bitrate];
             i.UserData = h[(byte)EventParam.UserData];
             i.Codec = (Codec)h[(byte)EventParam.Codec];
+
             return i;
         }
         public Codec Codec { get; set; }
@@ -93,6 +98,7 @@ namespace ExitGames.Client.Photon.Voice
         public int Bitrate { get; set; }
         /// <summary>Optional user data. Should be serializable by Photon.</summary>
         public object UserData { get; set; }
+
         /// <summary>Uncompressed frame (data packet) size in samples.</summary>
         public int FrameDurationSamples { get { return (int)(this.SamplingRate * (long)this.FrameDurationUs / 1000000); } }
         /// <summary>Uncompressed frame (data packet) size in samples.</summary>
@@ -102,6 +108,7 @@ namespace ExitGames.Client.Photon.Voice
         /// <summary>Video height (optional)</summary>
         public int Height { get; set; }
     }
+
     /// <summary>Helper to provide remote voices infos via Client.RemoteVoiceInfos iterator.</summary>
     public class RemoteVoiceInfo
     {

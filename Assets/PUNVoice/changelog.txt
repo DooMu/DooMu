@@ -1,3 +1,12 @@
+v1.17
+Nintendo Switch support (requires separate add-on)
+    PUNVoice:
+CHANGED: PUN updated to 1.93v
+CHANGED: LoadBalancingApi updated to 4.1.2.6
+    PhotonVoiceAPI:
+FIXED: null reference when trying to set DebugEchoMode of dummy voice
+FIXED: sending voice remove event to oneself when in DebugMode
+
 v1.16
 	PUNVoice:
 CHANGED: removed all RequestUserAuthorization calls: crashes iOS builds, useful only in WebPlayer which is not supported since Unity 5.4.0
@@ -27,7 +36,6 @@ FIXED: Photon Voice's "AutoConnect" and "AutoDisconnect" settings ignored when P
 v1.14
     PUNVoice:
 CHANGED: UWP build fixes
-CHANGED: the PS4 output implementation is now mixing the output of all PhotonVoiceSpeaker.cs instances and passing them to the same PS4 audio output port instead of opening a new port per instance because the Sony PS4 audio output APIs don't support more than 4 parallely opened voice output ports
 CHANGED: refactored the PhotonVoiceSpeaker cleanup code to get rid of code redundancies
 FIXED: Singleton pattern for PhotonVoiceNetwork and PhotonVoiceSettings
 CHANGED: PhotonVoiceRecorder passes IAudioSource along with LocalVoice to PhotonVoiceCreated message

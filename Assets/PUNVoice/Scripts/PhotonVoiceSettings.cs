@@ -22,22 +22,22 @@ public class PhotonVoiceSettings : MonoBehaviour
     public bool AutoTransmit = true;            // set in inspector
 
     /// Outgoing audio stream sampling rate (applied per every recoder instance).
-	public POpusCodec.Enums.SamplingRate SamplingRate = POpusCodec.Enums.SamplingRate.Sampling48000;     // set in inspector
+    public POpusCodec.Enums.SamplingRate SamplingRate = POpusCodec.Enums.SamplingRate.Sampling24000;     // set in inspector
 
     /// Outgoing audio stream encoder delay (buffer size in terms of time; applied per every recoder instance).
     public OpusCodec.FrameDuration FrameDuration = OpusCodec.FrameDuration.Frame20ms;   // set in inspector
 
     /// Outgoing audio stream bitrate (applied per every recoder instance).
-    public int Bitrate = 130000;               // set in inspector
+    public int Bitrate = 30000;               // set in inspector
 
     /// Enable voice detection (applied per every recoder instance).
     public bool VoiceDetection = false;                 // set in inspector
 
     /// Voice detection threshold (applied per every recoder instance).
-    public float VoiceDetectionThreshold = 0f;       // set in inspector
+    public float VoiceDetectionThreshold = 0.01f;       // set in inspector
 
     /// Remote audio stream playback delay to compensate packets latency variations (applied per every speaker instance). Try 100 - 200 if sound is choppy.
-    public int PlayDelayMs = 0;                       // set in inspector
+    public int PlayDelayMs = 200;                       // set in inspector
 
     /// PS4 user ID of the local user: pass the userID of the PS4 controller that is used by the local user.
     /// This value is used by Photon Voice when sending output to the headphones of as PS4 controller.

@@ -7,6 +7,7 @@
 // </summary>
 // <author>developer@photonengine.com</author>
 // ----------------------------------------------------------------------------
+
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ using System.Threading;
 #if NETFX_CORE
 using Windows.System.Threading;
 #endif
+
 namespace ExitGames.Client.Photon.Voice
 {
     /// <summary>
@@ -27,6 +29,7 @@ namespace ExitGames.Client.Photon.Voice
         /// </summary>
         bool Read(T[] buffer);
     }
+
     /// <summary>
     /// Used to make LocalVoice call user's code in its Service()
     /// </summary>
@@ -34,6 +37,7 @@ namespace ExitGames.Client.Photon.Voice
     {
         void Service(LocalVoice localVoice);
     }
+
     /// <summary>
     /// Represents outgoing data stream.
     /// </summary>
@@ -47,20 +51,28 @@ namespace ExitGames.Client.Photon.Voice
         public VoiceInfo Info { get { return info; } }
         /// <summary>If true, stream data broadcasted.</summary>
         public bool Transmit { get; set; }
+
         /// <summary>Returns true if stream broadcasts.</summary>
         public bool IsTransmitting { get; protected set; }
+
         /// <summary>Sent frames counter.</summary>
         public int FramesSent { get; private set; }
+
         /// <summary>Sent frames bytes counter.</summary>
         public int FramesSentBytes { get; private set; }
+
         /// <summary>Send data reliable.</summary>
         public bool Reliable { get; set; }
+
         /// <summary>Send data encrypted.</summary>
         public bool Encrypt { get; set; }
+
         /// <summary>Optional user object attached to LocalVoice.</summary>
         public object LocalUserObject { get; set; }
+
         /// <summary>Optional user object attached to LocalVoice. its Service() will be called at each VoiceClient.Service() call.</summary>
         public IServiceable LocalUserServiceable { get; set; }
+
         /// <summary>
         /// If true, outgoing stream routed back to client via server same way as for remote client's streams.
         /// Can be swithed any time. OnRemoteVoiceInfoAction and OnRemoteVoiceRemoveAction are triggered if required.
@@ -74,12 +86,17 @@ namespace ExitGames.Client.Photon.Voice
                 if (debugEchoMode != value)
                 {
                     debugEchoMode = value;
-                    voiceClient.frontend.SetDebugEchoMode(this);
+                    if (voiceClient != null && voiceClient.frontend != null)
+                    {
+                        voiceClient.frontend.SetDebugEchoMode(this);
+                    }
                 }
             }
         }
         bool debugEchoMode;
+
 #region nonpublic
+
         internal VoiceInfo info;
         protected IEncoder encoder;
         internal byte id;
@@ -92,6 +109,7 @@ namespace ExitGames.Client.Photon.Voice
         internal LocalVoice() // for dummy voices
         {
         }
+
         internal LocalVoice(VoiceClient voiceClient, IEncoder encoder, byte id, VoiceInfo voiceInfo, int channelId)
         {
             this.encoder = encoder;
@@ -101,8 +119,10 @@ namespace ExitGames.Client.Photon.Voice
             this.voiceClient = voiceClient;
             this.id = id;
         }
+
         internal string Name { get { return "Local v#" + id + " ch#" + voiceClient.channelStr(channelId); } }
         internal string LogPrefix { get { return "[PV] " + Name; } }
+
         private int noTransmitCnt;
         protected void resetNoTransmitCnt()
         {
@@ -120,6 +140,7 @@ namespace ExitGames.Client.Photon.Voice
                     }
                 }
             }
+
             if (noTransmitCnt == 0)
             {
                 this.IsTransmitting = false;
@@ -129,26 +150,34 @@ namespace ExitGames.Client.Photon.Voice
                 this.IsTransmitting = true;
                 noTransmitCnt--;
             }
+
             if (LocalUserServiceable != null)
             {
                 LocalUserServiceable.Service(this);
             }
         }
+
         internal void sendFrame(ArraySegment<byte> compressed)
         {
             this.FramesSent++;
             this.FramesSentBytes += compressed.Count;
+
             this.voiceClient.frontend.SendFrame(compressed, evNumber, id, this.channelId, this);
+
             this.eventTimestamps[evNumber] = Environment.TickCount;
             evNumber++;
+
             resetNoTransmitCnt();
         }
+
         internal Dictionary<byte, int> eventTimestamps = new Dictionary<byte, int>();
 #endregion
+
         public void RemoveSelf()
         {
             this.voiceClient.RemoveLocalVoice(this);
         }
+
         public virtual void Dispose()
         {
             if (!disposed)
@@ -161,6 +190,7 @@ namespace ExitGames.Client.Photon.Voice
             }
         }
     }
+
     public struct RemoteVoiceOptions
     {
         /// <summary>
@@ -179,8 +209,10 @@ namespace ExitGames.Client.Photon.Voice
         /// Register a method to be called when remote voice removed.
         /// </summary>
         public Action OnRemoteVoiceRemoveAction { get; set; }
+
         /// <summary>User object (e.g. audio pleayer) attached to remote voice instance for easy access.</summary>
         public object LocalUserObject { get; set; }
+
         /// <summary>Remote voice data decoder. Use to set decoder options or override it with user decoder.</summary>
         public IDecoder Decoder { get; set; }
     }
@@ -203,12 +235,14 @@ namespace ExitGames.Client.Photon.Voice
             this.voiceId = voiceId;
             this.Info = info;
             this.lastEvNumber = lastEventNumber;
+
             if (this.options.Decoder == null) // init fields first for proper logging
             {
                 voiceClient.frontend.LogError(LogPrefix + ": decoder is null");
                 disposed = true;
                 return;
             }
+
 #if NETFX_CORE
             ThreadPool.RunAsync((x) =>
             {
@@ -220,14 +254,18 @@ namespace ExitGames.Client.Photon.Voice
             t.Start();
 #endif
         }
+
         protected string Name { get { return "Remote v#" + voiceId + " ch#" + voiceClient.channelStr(channelId) + " p#" + playerId; } }
         protected string LogPrefix { get { return "[PV] " + Name; } }
+
         internal byte lastEvNumber = 0;
         private VoiceClient voiceClient;
+
         private static byte byteDiff(byte latest, byte last)
         {
             return (byte)(latest - (last + 1));
         }
+
         internal void receiveBytes(byte[] receivedBytes, byte evNumber)
         {
             // receive-gap detection and compensation
@@ -238,20 +276,26 @@ namespace ExitGames.Client.Photon.Voice
                 {
                     this.voiceClient.frontend.LogDebug(LogPrefix + " evNumer: " + evNumber + " playerVoice.lastEvNumber: " + this.lastEvNumber + " missing: " + missing + " r/b " + receivedBytes.Length);
                 }
+
                 this.lastEvNumber = evNumber;
+
                 // restoring missing frames
                 receiveNullFrames(missing);
+
                 this.voiceClient.FramesLost += missing;
             }
             this.receiveFrame(receivedBytes);
         }
+
         Queue<byte[]> frameQueue = new Queue<byte[]>();
         AutoResetEvent frameQueueReady = new AutoResetEvent(false);
+
         void receiveFrame(byte[] frame)
         {
             lock (disposeLock) // sync with Dispose and decodeThread 'finally'
             {
                 if (disposed) return;
+
                 lock (frameQueue)
                 {
                     frameQueue.Enqueue(frame);
@@ -259,11 +303,13 @@ namespace ExitGames.Client.Photon.Voice
                 frameQueueReady.Set();
             }
         }
+
         void receiveNullFrames(int count)
         {
             lock (disposeLock) // sync with Dispose and decodeThread 'finally'
             {
                 if (disposed) return;
+
                 lock (frameQueue)
                 {
                     for (int i = 0; i < count; i++)
@@ -280,12 +326,15 @@ namespace ExitGames.Client.Photon.Voice
             try
             {
                 decoder.Open(Info);
+
                 while (!disposed)
                 {
                     frameQueueReady.WaitOne(); // Wait until data is pushed to the queue or Dispose signals.
+
                     while (true) // Dequeue and process while the queue is not empty
                     {
                         if (disposed) break; // early exit to save few resources
+
                         byte[] f = null;
                         bool ok = false;
                         lock (frameQueue)
@@ -329,6 +378,7 @@ namespace ExitGames.Client.Photon.Voice
                     frameQueue.Clear();
                 }
                 decoder.Dispose();
+
                 voiceClient.frontend.LogInfo(LogPrefix + ": Exiting decode thread");
             }
         }
@@ -357,6 +407,7 @@ namespace ExitGames.Client.Photon.Voice
                 ((IDecoderQueued)decoder).Decode(frame);
             }
         }        
+
         internal byte[] decodeFrameToByte(byte[] buffer)
         {
             byte[] res;
@@ -385,6 +436,7 @@ namespace ExitGames.Client.Photon.Voice
             }
             return res;
         }
+
         internal float[] decodeFrameToFloat(byte[] buffer)
         {
             float[] res;
@@ -399,6 +451,7 @@ namespace ExitGames.Client.Photon.Voice
             }
             return res;
         }
+
         internal void removeAndDispose()
         {
             if (options.OnRemoteVoiceRemoveAction != null)
@@ -407,6 +460,7 @@ namespace ExitGames.Client.Photon.Voice
             }
             Dispose();
         }
+
         public void Dispose()
         {
             lock (disposeLock) // sync with receiveFrame/receiveNullFrames

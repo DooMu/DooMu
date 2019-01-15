@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ExitGames.Client.Photon.LoadBalancing;
 
 namespace ExitGames.Client.Photon.Voice
 {
@@ -227,6 +228,10 @@ namespace ExitGames.Client.Photon.Voice
             }
             lock (sendLock)
             {
+                if (voice.DebugEchoMode)
+                {
+                    opt.Receivers = ReceiverGroup.All;
+                }
                 this.OpRaiseEvent(VoiceEventCode.GetCode(channelId), content, opt, sendOpt);
             }
         }

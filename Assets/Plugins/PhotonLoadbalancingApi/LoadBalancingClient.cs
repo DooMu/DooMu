@@ -1917,6 +1917,10 @@ namespace ExitGames.Client.Photon.LoadBalancing
         /// <remarks>This method is not responsible to keep up the state of a LoadBalancingClient. Calling base.DebugReturn on overrides is optional.</remarks>
     public virtual void DebugReturn(DebugLevel level, string message)
     {
+        if (this.loadBalancingPeer.DebugOut != DebugLevel.ALL && level > this.loadBalancingPeer.DebugOut)
+        {
+            return;
+        }
         #if !UNITY
         Debug.WriteLine(message);
         #else
@@ -2337,7 +2341,7 @@ namespace ExitGames.Client.Photon.LoadBalancing
                     this.DisconnectedCause = DisconnectCause.ExceptionOnConnect;
                     this.State = ClientState.Disconnected;
                     break;
-                case StatusCode.DisconnectByServer:
+                case StatusCode.DisconnectByServerTimeout:
                     if (this.AuthValues != null)
                     {
                         this.AuthValues.Token = null; // when leaving the server, invalidate the secret (but not the auth values)

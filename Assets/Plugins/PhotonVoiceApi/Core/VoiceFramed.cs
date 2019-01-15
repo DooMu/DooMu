@@ -7,12 +7,14 @@
 // </summary>
 // <author>developer@photonengine.com</author>
 // ----------------------------------------------------------------------------
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
 #if NETFX_CORE
 using Windows.System.Threading;
 #endif
+
 namespace ExitGames.Client.Photon.Voice
 {
     public class Framer<T>
@@ -30,13 +32,16 @@ namespace ExitGames.Client.Photon.Voice
                 this.sizeofT = sizeof(float);
             else
                 throw new Exception("Input data type is not supported: " + x[0].GetType());
+
         }
         int sizeofT;
         int framePos = 0;
+
         public int Count(int bufLen)
         {
             return (bufLen + framePos) / frame.Length;
         }
+
         public IEnumerable<T[]> Frame(T[] buf)
         {
             var s = frame.Length;
@@ -48,6 +53,7 @@ namespace ExitGames.Client.Photon.Voice
             else
             {
                 var bufPos = 0;
+
                 while (bufPos + s - framePos <= buf.Length)
                 {
                     var l = s - framePos;
@@ -55,6 +61,7 @@ namespace ExitGames.Client.Photon.Voice
                     //Console.WriteLine("=== Y {0} {1} -> {2} {3} ", bufPos, bufPos + l, sourceFramePos, sourceFramePos + l);
                     bufPos += l;
                     framePos = 0;
+
                     yield return this.frame;
                 }
                 if (bufPos != buf.Length)
@@ -91,6 +98,7 @@ namespace ExitGames.Client.Photon.Voice
         {
             T[] Process(T[] buf);
         }
+
         // Optionally process input data. 
         // Should return arrays exactly of info.FrameSize size or null to skip sending
         internal T[] processFrame(T[] buf)
@@ -123,6 +131,7 @@ namespace ExitGames.Client.Photon.Voice
             }
         }
         int preProcessorsCnt;
+
         /// <summary>
         /// Adds processors before built-in processors (resampling, level measurement, voice detection and calibration) and everything added with AddPostProcessor.
         /// </summary>
@@ -154,22 +163,26 @@ namespace ExitGames.Client.Photon.Voice
         : base(voiceClient, encoder, id, voiceInfo, channelId, frameSize)
         {
             this.framer = new Framer<T>(FrameSize);
+
             pushDataBufferPool = new PrimitiveArrayPool<T>(DATA_POOL_CAPACITY, Name + " Data");
             // Frame source is free to change this
             this.PushDataBufferPool.Init(FrameSize);
         }
+
         bool dataEncodeThreadStarted;
         Queue<T[]> pushDataQueue = new Queue<T[]>();
         AutoResetEvent pushDataQueueReady = new AutoResetEvent(false);
         // Work only if buffers of SourceFrameSize size pushed via PushDataAsync
         PrimitiveArrayPool<T> pushDataBufferPool;
         public PrimitiveArrayPool<T> PushDataBufferPool { get { return pushDataBufferPool; } }
+
         public bool PushDataAsyncReady { get { lock (pushDataQueue) return pushDataQueue.Count < DATA_POOL_CAPACITY - 1; } } // 1 slot for buffer currently processed and not contained either by pool or queue
         // Accepts array of arbitrary size. Automatically splits or aggregates input to buffers of sourceFrameBuffer's length
         // Expects buf content preserved until PushData call in worker thread. Releases buffer to PushDataBufferPool then.
         public void PushDataAsync(T[] buf)
         {
             if (disposed) return;
+
             if (!dataEncodeThreadStarted)
             {
                 voiceClient.frontend.LogInfo(LogPrefix + ": Starting data encode thread");
@@ -185,6 +198,7 @@ namespace ExitGames.Client.Photon.Voice
 #endif
                 dataEncodeThreadStarted = true;
             }
+
             // Caller should check this asap in general case if packet production is expensive.
             // This is not the case For lightweight audio stream. Also overflow does not happen for audio stream normally.
             // Make sure that queue is not too large even if caller missed the check.
@@ -212,9 +226,11 @@ namespace ExitGames.Client.Photon.Voice
                 while (!exitThread)
                 {
                     pushDataQueueReady.WaitOne(); // Wait until data is pushed to the queue or Dispose signals.
+
                     while (true) // Dequeue and process while the queue is not empty
                     {
                         if (exitThread) break; // early exit to save few resources
+
                         T[] b = null;
                         lock (pushDataQueue)
                         {
@@ -247,14 +263,18 @@ namespace ExitGames.Client.Photon.Voice
                     disposed = true;
                 }
                 PushDataBufferPool.Dispose();
+
 #if NETFX_CORE
                 pushDataQueueReady.Dispose();
 #else
                 pushDataQueueReady.Close();
 #endif
+
                 voiceClient.frontend.LogInfo(LogPrefix + ": Exiting data encode thread");
             }
         }
+
+
         // Accepts array of arbitrary size. Automatically splits or aggregates input to buffers of sourceFrameBuffer's length
         public void PushData(T[] buf)
         {
@@ -283,6 +303,7 @@ namespace ExitGames.Client.Photon.Voice
                 }
             }
         }
+
         public override void Dispose()
         {
             exitThread = true;

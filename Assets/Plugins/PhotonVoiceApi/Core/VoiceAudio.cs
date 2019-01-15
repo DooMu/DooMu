@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System;
 using System.Collections.Generic;
+
 namespace ExitGames.Client.Photon.Voice
 {
     public interface IAudioSource : IDisposable
@@ -12,28 +13,34 @@ namespace ExitGames.Client.Photon.Voice
 	public interface IAudioReader<T> : IDataReader<T>, IAudioSource
     {
     }
+
 	public  interface IAudioPusher<T> : IAudioSource
 	{
         // Assigns callback during voice initialization
         // localVoice may be optionally used by IAudioPusher<T>
         void SetCallback(Action<T[]> callback, LocalVoice localVoice);
 	}
+
     public interface ILocalVoiceAudio
     {
         /// <summary>Use to enable or disable voice detector and set its parameters.</summary>
         AudioUtil.IVoiceDetector VoiceDetector { get; }
+
         /// <summary>
         /// Level meter utility.
         /// </summary>
         AudioUtil.ILevelMeter LevelMeter { get; }
+
         /// <summary>If true, voice detector calibration is in progress.</summary>
         bool VoiceDetectorCalibrating { get; }
+
         /// <summary>Trigger voice detector calibration process.
         /// While calibrating, keep silence. Voice detector sets threshold basing on measured backgroud noise level.
         /// </summary>
         /// <param name="durationMs">Duration of calibration in milliseconds.</param>
         void VoiceDetectorCalibrate(int durationMs);
     }
+
     public static class LocalVoiceAudio
     {
         public static LocalVoiceAudioDummy Dummy = new LocalVoiceAudioDummy();
@@ -61,6 +68,7 @@ namespace ExitGames.Client.Photon.Voice
             }
         }
     }
+
     abstract public class LocalVoiceAudio<T> : LocalVoiceFramed<T>, ILocalVoiceAudio
     {
         public virtual AudioUtil.IVoiceDetector VoiceDetector { get { return voiceDetector; } }
@@ -68,6 +76,7 @@ namespace ExitGames.Client.Photon.Voice
         protected AudioUtil.VoiceDetectorCalibration<T> voiceDetectorCalibration;
         public virtual AudioUtil.ILevelMeter LevelMeter { get { return levelMeter; } }
         protected AudioUtil.LevelMeter<T> levelMeter;
+
         /// <summary>Trigger voice detector calibration process.
         /// While calibrating, keep silence. Voice detector sets threshold basing on measured backgroud noise level.
         /// </summary>
@@ -76,7 +85,9 @@ namespace ExitGames.Client.Photon.Voice
         {
             voiceDetectorCalibration.VoiceDetectorCalibrate(durationMs);
         }
+
         public bool VoiceDetectorCalibrating { get { return voiceDetectorCalibration.VoiceDetectorCalibrating; } }
+
         protected int channels;
         protected int sourceSamplingRateHz;
         protected bool resampleSource;
@@ -112,9 +123,11 @@ namespace ExitGames.Client.Photon.Voice
     {
         private AudioUtil.VoiceDetectorDummy voiceDetector;
         private AudioUtil.LevelMetterDummy levelMeter;
+
         public AudioUtil.IVoiceDetector VoiceDetector { get { return voiceDetector; } }
         public AudioUtil.ILevelMeter LevelMeter { get { return levelMeter; } }
         public bool VoiceDetectorCalibrating { get { return false; } }
+
         public void VoiceDetectorCalibrate(int durationMs) { }
         public LocalVoiceAudioDummy()
         {
@@ -122,6 +135,7 @@ namespace ExitGames.Client.Photon.Voice
             levelMeter = new AudioUtil.LevelMetterDummy();
         }
     }
+
     public class LocalVoiceAudioFloat : LocalVoiceAudio<float>
     {
         internal LocalVoiceAudioFloat(VoiceClient voiceClient, IEncoderDataFlow<float> encoder, byte id, VoiceInfo voiceInfo, int channelId)
@@ -133,6 +147,7 @@ namespace ExitGames.Client.Photon.Voice
             initBuiltinProcessors();
         }
     }
+
     public class LocalVoiceAudioShort : LocalVoiceAudio<short>
     {
         internal LocalVoiceAudioShort(VoiceClient voiceClient, IEncoderDataFlow<short> encoder, byte id, VoiceInfo voiceInfo, int channelId)

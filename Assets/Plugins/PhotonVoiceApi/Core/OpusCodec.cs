@@ -3,6 +3,7 @@ using POpusCodec.Enums;
 using POpusCodec;
 using System;
 using System.Collections.Generic;
+
 namespace ExitGames.Client.Photon.Voice
 {
     public class OpusCodec
@@ -16,6 +17,7 @@ namespace ExitGames.Client.Photon.Voice
             Frame40ms = 40000,
             Frame60ms = 60000
         }
+
         public static class EncoderFactory
         {
             public static IEncoder Create(VoiceInfo i, LocalVoice localVoice)
@@ -36,6 +38,7 @@ namespace ExitGames.Client.Photon.Voice
             {
                 encoder = new OpusEncoder((SamplingRate)i.SamplingRate, (Channels)i.Channels, i.Bitrate, OpusApplicationType.Voip, (Delay)(i.FrameDurationUs * 2 / 1000));
             }
+
             public void Dispose()
             {
                 lock (this)
@@ -44,8 +47,10 @@ namespace ExitGames.Client.Photon.Voice
                     disposed = true;
                 }
             }
+
             public abstract ArraySegment<byte> EncodeAndGetOutput(T[] buf);
         }
+
         public class EncoderFloat : Encoder<float>
         {
             private static readonly ArraySegment<byte> EmptyBuffer = new ArraySegment<byte>(new byte[] { });
@@ -72,6 +77,7 @@ namespace ExitGames.Client.Photon.Voice
                 }
             }
         }
+
         public class Decoder : IDecoderDirect
         {
             OpusDecoder decoder;
@@ -79,23 +85,28 @@ namespace ExitGames.Client.Photon.Voice
             {
                 decoder = new OpusDecoder((SamplingRate)i.SamplingRate, (Channels)i.Channels);
             }
+
             public byte[] DecodeToByte(byte[] buf)
             {
                 throw new NotImplementedException();
             }
+
             public float[] DecodeToFloat(byte[] buf)
             {
                 return decoder.DecodePacketFloat(buf);
             }
+
             public short[] DecodeToShort(byte[] buf)
             {
                 return decoder.DecodePacketShort(buf);
             }
+
             public void Dispose()
             {
                 decoder.Dispose();
             }
         }
+
         public class Util
         {
             internal static int bestEncoderSampleRate(int f)

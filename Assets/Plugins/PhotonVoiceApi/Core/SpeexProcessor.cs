@@ -1,9 +1,11 @@
 ﻿#if (UNITY_IOS && !UNITY_EDITOR) || __IOS__
 #define DLL_IMPORT_INTERNAL
 #endif
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+
 namespace ExitGames.Client.Photon.Voice
 {
     public class SpeexProcessor : SpeexLib, Voice.LocalVoiceAudioShort.IProcessor
@@ -13,13 +15,16 @@ namespace ExitGames.Client.Photon.Voice
         public bool AEC { get { return _AEC; } set { if (_AEC != value) { _AEC = value; playBufQueue.Clear(); } } }
         // Applied on next echo state cretion
         public int AECFilterLengthMs { get; set; }
+
         int _AECPlaybackDelayMs;
         public int AECPlaybackDelayMs
         {
             get { return _AECPlaybackDelayMs; }
             set { if (_AECPlaybackDelayMs != value) { _AECPlaybackDelayMs = value; InitPlayDelay(value); } }
         }
+
         public int AECurrentPlayDelayFrames { get { return playBufQueue.Count; } }
+
         bool _AECLatencyDetect;
         public bool AECLatencyDetect
         {
@@ -55,6 +60,7 @@ namespace ExitGames.Client.Photon.Voice
                 };
             }
         }
+
         // Triggers echo state recreation with current filter length
         public void ResetAEC()
         {
@@ -63,6 +69,7 @@ namespace ExitGames.Client.Photon.Voice
                 DestroyEchoState();
             }
         }
+
         public void AECLatecnyDetectCaliberate()
         {
             detectPlayCorr.Calibrate(2000);
@@ -74,12 +81,14 @@ namespace ExitGames.Client.Photon.Voice
             get { return getBool(SPEEX_PREPROCESS_GET_DENOISE); }
             set { set(SPEEX_PREPROCESS_SET_DENOISE, value); }
         }
+
         // auto gain conrtol
         public bool AGC
         {
             get { return getBool(SPEEX_PREPROCESS_GET_AGC); }
             set { set(SPEEX_PREPROCESS_SET_AGC, value); }
         }
+
         public float AGCLevel
         {
             get { return getFloat(SPEEX_PREPROCESS_GET_AGC_LEVEL); }
@@ -95,12 +104,14 @@ namespace ExitGames.Client.Photon.Voice
         {
             speex_preprocess_ctl(st, param, ref val);
         }
+
         bool getBool(int param)
         {
             int i = 0;
             speex_preprocess_ctl(st, param, ref i);
             return i != 0;
         }
+
         float getFloat(int param)
         {
             float f = 0;
@@ -123,12 +134,14 @@ namespace ExitGames.Client.Photon.Voice
         int playChannels;
         ILogger logger;
         Func<long> clockMs;
+
         AudioUtil.VoiceLevelDetectCalibrate<float> detectPlay;
         AudioUtil.VoiceLevelDetectCalibrate<short> detectPlayCorr;
         AudioUtil.VoiceLevelDetectCalibrate<short> detectRec;
         long detectTimePlay;
         long detectTimePlayDelayed;
         long detectTimeRec;
+
         public SpeexProcessor(ILogger logger, Func<long> clockMs, int frameSize, int samplingRate, int channels, int playSamplingRate, int playChannels, int playBufSize)
         {
             this.clockMs = clockMs == null ? () => DateTime.Now.Millisecond : clockMs;
@@ -142,6 +155,7 @@ namespace ExitGames.Client.Photon.Voice
             this.st = speex_preprocess_state_init(frameSamples, samplingRate);
             logger.LogInfo("SpeexProcessor state: create sampling rate {0}, frame samples {1}", samplingRate, frameSamples);
         }
+
         void InitLatencyDetect()
         { 
             this.detectPlay = new AudioUtil.VoiceLevelDetectCalibrate<float>(playSamplingRate, playChannels);
@@ -151,6 +165,7 @@ namespace ExitGames.Client.Photon.Voice
             this.detectPlayCorr.Detector.OnDetected += () => detectTimePlayDelayed = clockMs();
             this.detectRec.Detector.OnDetected += () => detectTimeRec = clockMs();
         }
+
         public void InitAEC()
         {
             lock (this)
@@ -159,13 +174,18 @@ namespace ExitGames.Client.Photon.Voice
                 {
                     return;
                 }
+
                 playFramer = new Voice.Framer<float>(frameSamples * playSamplingRate / samplingRate * playChannels);
+
                 InitPlayDelay(AECPlaybackDelayMs);
+
                 int filterLength = samplingRate * AECFilterLengthMs / 1000;
+
                 DestroyEchoState();
                 stEcho = speex_echo_state_init_mc(frameSamples, filterLength, channels, playChannels);
                 speex_echo_ctl(stEcho, SPEEX_ECHO_SET_SAMPLING_RATE, ref samplingRate);
                 speex_preprocess_ctl(st, SPEEX_PREPROCESS_SET_ECHO_STATE, stEcho);
+
                 logger.LogInfo("SpeexProcessor AEC: create sampling rate {0}, frame samples {1}, filter length {2}ms={3}frames, mic channels {4}, out channels {5}, playback delay {6}ms={7}:{8}frames", samplingRate, frameSamples, AECFilterLengthMs, filterLength, channels, playChannels, AECPlaybackDelayMs, playDelayFrames, playDelayMaxFrames);
                 logger.LogInfo("SpeexProcessor AEC: output sampling rate {0}", playSamplingRate);
                 if (playSamplingRate != samplingRate)
@@ -174,19 +194,24 @@ namespace ExitGames.Client.Photon.Voice
                 }
             }
         }
+
         void InitPlayDelay(int ms)
         {
             playDelayFrames = ms * samplingRate / frameSamples / 1000;
             playDelayMaxFrames = playDelayFrames * 3;
+
             playbackBufPool = new Voice.PrimitiveArrayPool<short>(playDelayMaxFrames, "Speex playback pool", frameSamples * playChannels);
         }
+
         public short[] Process(short[] buf)
         {
             if (disposed) return buf;
+
             if (_AECLatencyDetect)
             {
                 this.detectRec.Process(buf);
             }
+
             if (AEC)
             {
                 // echo state lazy initialization
@@ -194,9 +219,11 @@ namespace ExitGames.Client.Photon.Voice
                 {
                     InitAEC();
                 }
+
                 lock (playBufQueue)
                 {
                     frameCntRec++;
+
                     if (playBufQueue.Count > playDelayFrames)
                     {
                         var b = playBufQueue.Dequeue();
@@ -221,16 +248,20 @@ namespace ExitGames.Client.Photon.Voice
         public void OnAudioOutFrame(float[] data, int outChannels)
         {
             if (disposed) return;
+
             lock (this) if (stEcho == IntPtr.Zero) return;
+
             if (outChannels != playChannels)
             {
                 logger.LogError("SpeexProcessor AEC: OnAudioOutFrame channel count {0} != {1} AudioSettings.speakerMode channel count.", outChannels, playChannels);
                 return;
             }
+
             if (_AECLatencyDetect)
             {
                 this.detectPlay.Process(data);
             }
+
             foreach (var playbackBufFloat in playFramer.Frame(data))
             {
                 lock (playBufQueue)
@@ -245,7 +276,9 @@ namespace ExitGames.Client.Photon.Voice
                         }
                     }
                 }
+
                 var playbackBuf = playbackBufPool.AcquireOrCreate();
+
                 if (playbackBufFloat.Length != playbackBuf.Length)
                 {
                     Voice.AudioUtil.ResampleAndConvert(playbackBufFloat, playbackBuf, playbackBuf.Length, outChannels);
@@ -254,6 +287,7 @@ namespace ExitGames.Client.Photon.Voice
                 {
                     Voice.AudioUtil.Convert(playbackBufFloat, playbackBuf, playbackBuf.Length);
                 }
+
                 lock (playBufQueue)
                 {
                     playBufQueue.Enqueue(playbackBuf);
@@ -263,6 +297,7 @@ namespace ExitGames.Client.Photon.Voice
         }
         int frameCntRec;
         int frameCntPlay;
+
         public void PrintInfo()
         {
             //int size = 0;
@@ -274,6 +309,7 @@ namespace ExitGames.Client.Photon.Voice
             //    logger.LogInfo("===== {0} {1} {2} {3} {4} {5}", detectPlay.Level.CurrentAvgAmp, detectPlay.Detector.Threshold, detectPlay.Detector.Detected, detectRec.Level.CurrentAvgAmp, detectRec.Detector.Threshold, detectRec.Detector.Detected);
             //}
         }
+
         void DestroyEchoState()
         {
             if (stEcho != IntPtr.Zero)
@@ -299,6 +335,7 @@ namespace ExitGames.Client.Photon.Voice
             }
         }
     }
+
     public class SpeexLib
     {
 #if DLL_IMPORT_INTERNAL
@@ -310,97 +347,126 @@ namespace ExitGames.Client.Photon.Voice
         public const int SPEEX_PREPROCESS_SET_DENOISE = 0;
         /** Get preprocessor denoiser state */
         public const int SPEEX_PREPROCESS_GET_DENOISE = 1;
+
         /** Set preprocessor Automatic Gain Control state */
         public const int SPEEX_PREPROCESS_SET_AGC = 2;
         /** Get preprocessor Automatic Gain Control state */
         public const int SPEEX_PREPROCESS_GET_AGC = 3;
+
         /** Set preprocessor Voice Activity Detection state */
         public const int SPEEX_PREPROCESS_SET_VAD = 4;
         /** Get preprocessor Voice Activity Detection state */
         public const int SPEEX_PREPROCESS_GET_VAD = 5;
+
         /** Set preprocessor Automatic Gain Control level (float) */
         public const int SPEEX_PREPROCESS_SET_AGC_LEVEL = 6;
         /** Get preprocessor Automatic Gain Control level (float) */
         public const int SPEEX_PREPROCESS_GET_AGC_LEVEL = 7;
+
         /** Set preprocessor dereverb state */
         public const int SPEEX_PREPROCESS_SET_DEREVERB = 8;
         /** Get preprocessor dereverb state */
         public const int SPEEX_PREPROCESS_GET_DEREVERB = 9;
+
         /** Set preprocessor dereverb level */
         public const int SPEEX_PREPROCESS_SET_DEREVERB_LEVEL = 10;
         /** Get preprocessor dereverb level */
         public const int SPEEX_PREPROCESS_GET_DEREVERB_LEVEL = 11;
+
         /** Set preprocessor dereverb decay */
         public const int SPEEX_PREPROCESS_SET_DEREVERB_DECAY = 12;
         /** Get preprocessor dereverb decay */
         public const int SPEEX_PREPROCESS_GET_DEREVERB_DECAY = 13;
+
         /** Set probability required for the VAD to go from silence to voice */
         public const int SPEEX_PREPROCESS_SET_PROB_START = 14;
         /** Get probability required for the VAD to go from silence to voice */
         public const int SPEEX_PREPROCESS_GET_PROB_START = 15;
+
         /** Set probability required for the VAD to stay in the voice state (integer percent) */
         public const int SPEEX_PREPROCESS_SET_PROB_CONTINUE = 16;
         /** Get probability required for the VAD to stay in the voice state (integer percent) */
         public const int SPEEX_PREPROCESS_GET_PROB_CONTINUE = 17;
+
         /** Set maximum attenuation of the noise in dB (negative number) */
         public const int SPEEX_PREPROCESS_SET_NOISE_SUPPRESS = 18;
         /** Get maximum attenuation of the noise in dB (negative number) */
         public const int SPEEX_PREPROCESS_GET_NOISE_SUPPRESS = 19;
+
         /** Set maximum attenuation of the residual echo in dB (negative number) */
         public const int SPEEX_PREPROCESS_SET_ECHO_SUPPRESS = 20;
         /** Get maximum attenuation of the residual echo in dB (negative number) */
         public const int SPEEX_PREPROCESS_GET_ECHO_SUPPRESS = 21;
+
         /** Set maximum attenuation of the residual echo in dB when near end is active (negative number) */
         public const int SPEEX_PREPROCESS_SET_ECHO_SUPPRESS_ACTIVE = 22;
         /** Get maximum attenuation of the residual echo in dB when near end is active (negative number) */
         public const int SPEEX_PREPROCESS_GET_ECHO_SUPPRESS_ACTIVE = 23;
+
         /** Set the corresponding echo canceller state so that residual echo suppression can be performed (NULL for no residual echo suppression) */
         public const int SPEEX_PREPROCESS_SET_ECHO_STATE = 24;
         /** Get the corresponding echo canceller state */
         public const int SPEEX_PREPROCESS_GET_ECHO_STATE = 25;
+
         /** Set maximal gain increase in dB/second (int32) */
         public const int SPEEX_PREPROCESS_SET_AGC_INCREMENT = 26;
+
         /** Get maximal gain increase in dB/second (int32) */
         public const int SPEEX_PREPROCESS_GET_AGC_INCREMENT = 27;
+
         /** Set maximal gain decrease in dB/second (int32) */
         public const int SPEEX_PREPROCESS_SET_AGC_DECREMENT = 28;
+
         /** Get maximal gain decrease in dB/second (int32) */
         public const int SPEEX_PREPROCESS_GET_AGC_DECREMENT = 29;
+
         /** Set maximal gain in dB (int32) */
         public const int SPEEX_PREPROCESS_SET_AGC_MAX_GAIN = 30;
+
         /** Get maximal gain in dB (int32) */
         public const int SPEEX_PREPROCESS_GET_AGC_MAX_GAIN = 31;
+
         /*  Can't set loudness */
         /** Get loudness */
         public const int SPEEX_PREPROCESS_GET_AGC_LOUDNESS = 33;
+
         /*  Can't set gain */
         /** Get current gain (int32 percent) */
         public const int SPEEX_PREPROCESS_GET_AGC_GAIN = 35;
+
         /*  Can't set spectrum size */
         /** Get spectrum size for power spectrum (int32) */
         public const int SPEEX_PREPROCESS_GET_PSD_SIZE = 37;
+
         /*  Can't set power spectrum */
         /** Get power spectrum (int32[] of squared values) */
         public const int SPEEX_PREPROCESS_GET_PSD = 39;
+
         /*  Can't set noise size */
         /** Get spectrum size for noise estimate (int32)  */
         public const int SPEEX_PREPROCESS_GET_NOISE_PSD_SIZE = 41;
+
         /*  Can't set noise estimate */
         /** Get noise estimate (int32[] of squared values) */
         public const int SPEEX_PREPROCESS_GET_NOISE_PSD = 43;
+
         /* Can't set speech probability */
         /** Get speech probability in last frame (int32).  */
         public const int SPEEX_PREPROCESS_GET_PROB = 45;
+
         /** Set preprocessor Automatic Gain Control level (int32) */
         public const int SPEEX_PREPROCESS_SET_AGC_TARGET = 46;
         /** Get preprocessor Automatic Gain Control level (int32) */
         public const int SPEEX_PREPROCESS_GET_AGC_TARGET = 47;
+
+
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr speex_preprocess_state_init(int frame_size, int sampling_rate);
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern void speex_preprocess_state_destroy(IntPtr st);
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int speex_preprocess_run(IntPtr st, short[] x);
+
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int speex_preprocess_ctl(IntPtr st, int request, IntPtr ptr);
         public static int speex_preprocess_ctl(IntPtr st, int request, ref int value)
@@ -428,30 +494,38 @@ namespace ExitGames.Client.Photon.Voice
         // echo
         /** Obtain frame size used by the AEC */
         public const int SPEEX_ECHO_GET_FRAME_SIZE = 3;
+
         /** Set sampling rate */
         public const int SPEEX_ECHO_SET_SAMPLING_RATE = 24;
         /** Get sampling rate */
         public const int SPEEX_ECHO_GET_SAMPLING_RATE = 25;
+
         /* Can't set window sizes */
         /** Get size of impulse response (int32) */
         public const int SPEEX_ECHO_GET_IMPULSE_RESPONSE_SIZE = 27;
+
         /* Can't set window content */
         /** Get impulse response (int32[]) */
         public const int SPEEX_ECHO_GET_IMPULSE_RESPONSE = 29;
+
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr speex_echo_state_init(int frame_size, int filter_length);
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr speex_echo_state_init_mc(int frame_size, int filter_length, int nb_mic, int nb_speakers);
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern void speex_echo_state_destroy(IntPtr st);
+
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern void speex_echo_cancellation(IntPtr st, short[] rec, short[] play, short[] outBuf);
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern void speex_echo_capture(IntPtr st, short[] rec, short[] outBuf);
+
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern void speex_echo_playback(IntPtr st, short[] play);
+
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern void speex_echo_state_reset(IntPtr st);
+
         [DllImport(lib_name, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern int speex_echo_ctl(IntPtr st, int request, IntPtr ptr);
         public static int speex_echo_ctl(IntPtr st, int request, ref int value)
@@ -477,5 +551,6 @@ namespace ExitGames.Client.Photon.Voice
             Marshal.FreeCoTaskMem(ptr);
             return ret;
         }
+
     }
 }

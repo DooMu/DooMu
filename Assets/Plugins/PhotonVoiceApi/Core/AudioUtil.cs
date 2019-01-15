@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System;
 using System.Collections.Generic;
+
 namespace ExitGames.Client.Photon.Voice
 {
     public static class AudioUtil
@@ -39,6 +40,7 @@ namespace ExitGames.Client.Photon.Voice
                 }
             }
         }
+
         public static void ResampleAndConvert(short[] src, float[] dst, int dstCount, int channels)
         {
             if (channels == 1)
@@ -73,6 +75,7 @@ namespace ExitGames.Client.Photon.Voice
                 }
             }
         }
+
         public static void ResampleAndConvert(float[] src, short[] dst, int dstCount, int channels)
         {
             if (channels == 1)
@@ -107,6 +110,7 @@ namespace ExitGames.Client.Photon.Voice
                 }
             }
         }
+
         public static void Convert(float[] src, short[] dst, int dstCount)
         {
             for (int i = 0; i < dstCount; i++)
@@ -114,6 +118,7 @@ namespace ExitGames.Client.Photon.Voice
                 dst[i] = (short)(src[i] * (float)short.MaxValue);
             }
         }
+
         public static void Convert(short[] src, float[] dst, int dstCount)
         {
             for (int i = 0; i < dstCount; i++)
@@ -121,6 +126,7 @@ namespace ExitGames.Client.Photon.Voice
                 dst[i] = src[i] / (float)short.MaxValue;
             }
         }
+
         public static void ForceToStereo<T>(T[] src, T[] dst, int srcChannels)
         {
             for (int i = 0, j = 0; j < dst.Length - 1; i += srcChannels, j += 2)
@@ -130,6 +136,7 @@ namespace ExitGames.Client.Photon.Voice
                 // throw away data from any further source channels
             }
         }
+
         internal static string tostr<T>(T[] x, int lim = 10)
         {
             System.Text.StringBuilder b = new System.Text.StringBuilder();
@@ -140,6 +147,7 @@ namespace ExitGames.Client.Photon.Voice
             }
             return b.ToString();
         }
+
         public class Resampler<T> : LocalVoiceFramed<T>.IProcessor
         {
             protected T[] frameResampled;
@@ -157,13 +165,16 @@ namespace ExitGames.Client.Photon.Voice
             public void Dispose()
             {
             }
+
         }
         public interface ILevelMeter
         {
             /// <summary>
             /// Average of last values in current 1/2 sec. buffer.
             /// </summary>
+
             float CurrentAvgAmp { get; }
+
             /// <summary>
             /// Max of last values in 1/2 sec. buffer as it was at last buffer wrap.
             /// </summary>
@@ -171,15 +182,18 @@ namespace ExitGames.Client.Photon.Voice
             {
                 get;
             }
+
             /// <summary>
             /// Average of CurrentPeakAmp's since last reset.
             /// </summary>
             float AccumAvgPeakAmp { get; }
+
             /// <summary>
             /// Reset LevelMeter.AccumAvgPeakAmp.
             /// </summary>
             void ResetAccumAvgPeakAmp();
         }
+
         public class LevelMetterDummy : ILevelMeter
         {
             public float CurrentAvgAmp { get { return 0; } }
@@ -199,26 +213,34 @@ namespace ExitGames.Client.Photon.Voice
             protected int bufferSize;
             protected float[] buffer;
             protected int prevValuesPtr;
+
             protected float accumAvgPeakAmpSum;
             protected int accumAvgPeakAmpCount;
+
             internal LevelMeter(int samplingRate, int numChannels)
             {
                 this.bufferSize = samplingRate * numChannels / 2; // 1/2 sec
                 this.buffer = new float[this.bufferSize];
             }
+
             public float CurrentAvgAmp { get { return ampSum / this.bufferSize; } }
             public float CurrentPeakAmp
             {
                 get;
                 protected set;
             }
+
             public float AccumAvgPeakAmp { get { return this.accumAvgPeakAmpCount == 0 ? 0 : accumAvgPeakAmpSum / this.accumAvgPeakAmpCount; } }
+
             public void ResetAccumAvgPeakAmp() { this.accumAvgPeakAmpSum = 0; this.accumAvgPeakAmpCount = 0; ampPeak = 0; }
+
             public abstract T[] Process(T[] buf);
+
             public void Dispose()
             {
             }
         }
+
         public class LevelMeterFloat : LevelMeter<float>
         {
             public LevelMeterFloat(int samplingRate, int numChannels) : base(samplingRate, numChannels) { }
@@ -233,6 +255,7 @@ namespace ExitGames.Client.Photon.Voice
                     }
                     ampSum = ampSum + a - this.buffer[this.prevValuesPtr];
                     this.buffer[this.prevValuesPtr] = a;
+
                     if (ampPeak < a)
                     {
                         ampPeak = a;
@@ -249,6 +272,7 @@ namespace ExitGames.Client.Photon.Voice
                 return buf;
             }
         }
+
         public class LevelMeterShort : LevelMeter<short>
         {
             public LevelMeterShort(int samplingRate, int numChannels) : base(samplingRate, numChannels) { }
@@ -263,6 +287,7 @@ namespace ExitGames.Client.Photon.Voice
                     }
                     ampSum = ampSum + a - this.buffer[this.prevValuesPtr];
                     this.buffer[this.prevValuesPtr] = a;
+
                     if (ampPeak < a)
                     {
                         ampPeak = a;
@@ -279,21 +304,27 @@ namespace ExitGames.Client.Photon.Voice
                 return buf;
             }
         }
+
         public interface IVoiceDetector
         {
             /// <summary>If true, voice detection enabled.</summary>
             bool On { get; set; }
             /// <summary>Voice detected as soon as signal level exceeds threshold.</summary>
             float Threshold { get; set; }
+
             /// <summary>If true, voice detected.</summary>
             bool Detected { get; }
+
             /// <summary>Last time when switched to detected state.</summary>
             DateTime DetectedTime { get; }
+
             /// <summary>Called when switched to detected state.</summary>
             event Action OnDetected;
+
             /// <summary>Keep detected state during this time after signal level dropped below threshold.</summary>
             int ActivityDelayMs { get; set; }
         }
+
         public class VoiceDetectorCalibration<T> : LocalVoiceFramed<T>.IProcessor
         {
             IVoiceDetector voiceDetector;
@@ -301,6 +332,7 @@ namespace ExitGames.Client.Photon.Voice
             int valuesPerSec;
             public bool VoiceDetectorCalibrating { get { return voiceDetectorCalibrateCount > 0; } }
             protected int voiceDetectorCalibrateCount;
+
             public VoiceDetectorCalibration(IVoiceDetector voiceDetector, ILevelMeter levelMeter, int samplingRate, int channels)
             {
                 this.valuesPerSec = samplingRate * channels;
@@ -314,6 +346,7 @@ namespace ExitGames.Client.Photon.Voice
             }
             public T[] Process(T[] buf)
             {
+
                 if (this.voiceDetectorCalibrateCount != 0)
                 {
                     this.voiceDetectorCalibrateCount -= buf.Length;
@@ -325,6 +358,7 @@ namespace ExitGames.Client.Photon.Voice
                 }
                 return buf;
             }
+
             public void Dispose()
             {
             }
@@ -336,6 +370,7 @@ namespace ExitGames.Client.Photon.Voice
             public bool Detected { get { return false; } }
             public int ActivityDelayMs { get { return 0; } set { } }
             public DateTime DetectedTime { get; private set; }
+
             public event Action OnDetected;
         }
         /// <summary>
@@ -345,6 +380,7 @@ namespace ExitGames.Client.Photon.Voice
         {
             public bool On { get; set; }
             public float Threshold { get; set; }
+
             bool detected;
             public bool Detected
             {
@@ -358,6 +394,7 @@ namespace ExitGames.Client.Photon.Voice
                     }
                 }
             }
+
             public DateTime DetectedTime { get; private set; }
             public int ActivityDelayMs
             {
@@ -368,22 +405,28 @@ namespace ExitGames.Client.Photon.Voice
                     this.activityDelayValuesCount = value * valuesCountPerSec / 1000;
                 }
             }
+
             public event Action OnDetected;
+
             protected int activityDelay;
             protected int autoSilenceCounter = 0;
             protected int valuesCountPerSec;
             protected int activityDelayValuesCount;
+
             internal VoiceDetector(int samplingRate, int numChannels)
             {
                 this.valuesCountPerSec = samplingRate * numChannels;
                 this.ActivityDelayMs = 500;
                 this.On = true;
             }
+
             public abstract T[] Process(T[] buf);
+
             public void Dispose()
             {
             }
         }
+
         public class VoiceDetectorFloat : VoiceDetector<float>
         {
             public VoiceDetectorFloat(int samplingRate, int numChannels) : base(samplingRate, numChannels)
@@ -418,6 +461,7 @@ namespace ExitGames.Client.Photon.Voice
                 }
             }
         }
+
         public class VoiceDetectorShort : VoiceDetector<short>
         {
             internal VoiceDetectorShort(int samplingRate, int numChannels) : base(samplingRate, numChannels)
@@ -452,6 +496,7 @@ namespace ExitGames.Client.Photon.Voice
                 }
             }
         }
+
         // encapsulates level meter, voice detector and voice detector calibrator in single instance
         public class VoiceLevelDetectCalibrate<T> : LocalVoiceFramed<T>.IProcessor
         {
@@ -477,10 +522,12 @@ namespace ExitGames.Client.Photon.Voice
                 }
                 c = new VoiceDetectorCalibration<T>(Detector, Level, samplingRate, channels);
             }
+
             public void Calibrate(int durationMs)
             {
                 c.VoiceDetectorCalibrate(durationMs);
             }
+
             public T[] Process(T[] buf)
             {
                 buf = (Level as LocalVoiceFramed<T>.IProcessor).Process(buf);
@@ -488,6 +535,7 @@ namespace ExitGames.Client.Photon.Voice
                 buf = (Detector as LocalVoiceFramed<T>.IProcessor).Process(buf);
                 return buf;
             }
+
             public void Dispose()
             {
                 (Level as LocalVoiceFramed<T>.IProcessor).Dispose();
@@ -495,6 +543,7 @@ namespace ExitGames.Client.Photon.Voice
                 c.Dispose();
             }
         }
+
         // Tone generator. Helpful for debug but does not compile for UWP because of System.Timers.Timer.
         /*
         public class ToneAudioPusher<T> : ExitGames.Client.Photon.Voice.IAudioPusher<T>
@@ -514,12 +563,14 @@ namespace ExitGames.Client.Photon.Voice
                 {
                     Dispose();
                 }
+
                 this.callback = callback;
                 timer = new System.Timers.Timer(1000 * buf.Length / SamplingRate);
                 // Hook up the Elapsed event for the timer.
                 timer.Elapsed += new System.Timers.ElapsedEventHandler(OnTimedEvent);
                 timer.Enabled = true;
             }
+
             private void OnTimedEvent(object source, System.Timers.ElapsedEventArgs e)
             {                
                 if (buf is float[])
@@ -538,12 +589,14 @@ namespace ExitGames.Client.Photon.Voice
                         b[i] = (short)(System.Math.Sin((cntShort + i) * k) * short.MaxValue / 2);
                     }
                 }
+
                 cntFrame++;
                 cntShort += buf.Length;
                 this.callback(buf);
             }
             int cntFrame;
             int cntShort;
+
             public int Channels { get { return 1; } }
             public int SamplingRate { get { return 44100; } }
             public void Dispose()
@@ -553,6 +606,7 @@ namespace ExitGames.Client.Photon.Voice
         }
        */
     }
+
     public interface IAudioOut
     {
         bool IsPlaying { get; }
@@ -563,3 +617,4 @@ namespace ExitGames.Client.Photon.Voice
         int CurrentBufferLag { get; }
     }
 }
+

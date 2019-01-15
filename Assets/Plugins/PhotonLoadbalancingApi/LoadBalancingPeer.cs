@@ -73,10 +73,10 @@ namespace ExitGames.Client.Photon.LoadBalancing
             #pragma warning disable 0162    // the library variant defines if we should use PUN's SocketUdp variant (at all)
             if (PhotonPeer.NoSocket)
             {
-                #if !UNITY_EDITOR && (UNITY_PS3 || UNITY_ANDROID)
+                #if !UNITY_EDITOR && (UNITY_PS3)
                 this.SocketImplementationConfig[ConnectionProtocol.Udp] = typeof(SocketUdpNativeDynamic);
                 PingImplementation = typeof(PingNativeDynamic);
-                #elif !UNITY_EDITOR && (UNITY_IPHONE || UNITY_SWITCH)
+                #elif !UNITY_EDITOR && UNITY_IPHONE
                 this.SocketImplementationConfig[ConnectionProtocol.Udp] = typeof(SocketUdpNativeStatic);
                 PingImplementation = typeof(PingNativeStatic);
                 #elif !UNITY_EDITOR && (UNITY_WINRT)
